@@ -5,16 +5,21 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 
-from src.api import events, health, sync
+from src.api import events, health, seats, sync
 from src.clients.events_provider import EventsProviderClient
 from src.config import settings
 from src.db.session import session_factory
+from src.services.cache import TTLCache
 from src.services.sync import SyncRunner
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
+# httpx logs every request at INFO, which floods the log during sync.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+SEATS_CACHE_TTL = 30
 
 
 @contextlib.asynccontextmanager
@@ -23,6 +28,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings.events_provider_url, settings.events_provider_api_key
     )
     app.state.events_provider = client
+    app.state.seats_cache = TTLCache(SEATS_CACHE_TTL)
     app.state.sync_runner = SyncRunner(session_factory, client)
     worker = asyncio.create_task(app.state.sync_runner.run_forever())
     yield
@@ -36,3 +42,4 @@ app = FastAPI(title="Events Aggregator", lifespan=lifespan)
 app.include_router(health.router)
 app.include_router(sync.router)
 app.include_router(events.router)
+app.include_router(seats.router)

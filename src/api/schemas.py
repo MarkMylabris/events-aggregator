@@ -42,3 +42,8 @@ class EventsList(BaseModel):
     next: str | None
     previous: str | None
     results: list[EventShort]
+
+
+class Seats(BaseModel):
+    event_id: uuid.UUID
+    available_seats: list[str]
