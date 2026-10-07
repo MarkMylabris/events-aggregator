@@ -16,10 +16,12 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
+COPY --chown=appuser:appuser alembic.ini run.sh ./
+COPY --chown=appuser:appuser alembic ./alembic
 COPY --chown=appuser:appuser src ./src
 
 USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["bash", "./run.sh"]
