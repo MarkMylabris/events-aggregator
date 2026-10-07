@@ -1,3 +1,6 @@
+import uuid
+
+from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,4 +28,21 @@ class SqlTicketRepository:
             .values(values)
             .on_conflict_do_update(index_elements=["id"], set_=values)
         )
+        await self.session.commit()
+
+    async def get(self, ticket_id: uuid.UUID) -> Ticket | None:
+        row = await self.session.get(TicketORM, ticket_id)
+        if row is None:
+            return None
+        return Ticket(
+            id=row.id,
+            event_id=row.event_id,
+            first_name=row.first_name,
+            last_name=row.last_name,
+            email=row.email,
+            seat=row.seat,
+        )
+
+    async def delete(self, ticket_id: uuid.UUID) -> None:
+        await self.session.execute(delete(TicketORM).where(TicketORM.id == ticket_id))
         await self.session.commit()

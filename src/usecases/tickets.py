@@ -10,6 +10,7 @@ from src.clients.events_provider import (
 )
 from src.domain.entities import Event, EventStatus, Ticket
 from src.domain.exceptions import (
+    CancellationRejected,
     EventNotFound,
     EventNotPublished,
     InvalidSeat,
@@ -17,6 +18,7 @@ from src.domain.exceptions import (
     RegistrationClosed,
     RegistrationRejected,
     SeatUnavailable,
+    TicketNotFound,
 )
 from src.domain.seats import seat_in_pattern
 
@@ -35,13 +37,19 @@ class EventsProviderClient(typing.Protocol):
         seat: str,
     ) -> uuid.UUID: ...
 
+    async def unregister(self, event_id: uuid.UUID, ticket_id: uuid.UUID) -> None: ...
+
 
 class EventRepository(typing.Protocol):
     async def get(self, event_id: uuid.UUID) -> Event | None: ...
 
 
 class TicketRepository(typing.Protocol):
+    async def get(self, ticket_id: uuid.UUID) -> Ticket | None: ...
+
     async def save(self, ticket: Ticket) -> None: ...
+
+    async def delete(self, ticket_id: uuid.UUID) -> None: ...
 
 
 class SeatsCache(typing.Protocol):
@@ -111,3 +119,37 @@ class CreateTicketUsecase:
         )
         logger.info("Registered ticket %s for event %s", ticket_id, event_id)
         return ticket_id
+
+
+class CancelTicketUsecase:
+    def __init__(
+        self,
+        client: EventsProviderClient,
+        tickets: TicketRepository,
+        seats_cache: SeatsCache,
+    ) -> None:
+        self.client = client
+        self.tickets = tickets
+        self.seats_cache = seats_cache
+
+    async def do(self, ticket_id: uuid.UUID) -> None:
+        ticket = await self.tickets.get(ticket_id)
+        if ticket is None:
+            raise TicketNotFound
+
+        try:
+            await self.client.unregister(ticket.event_id, ticket_id)
+        except EventsProviderNotFound:
+            # The provider no longer knows this ticket: drop our stale copy.
+            await self.tickets.delete(ticket_id)
+            raise TicketNotFound from None
+        except EventsProviderBadRequest as exc:
+            raise CancellationRejected(exc.detail) from None
+        except (EventsProviderError, OSError) as exc:
+            logger.warning("Cancellation of %s failed: %s", ticket_id, exc)
+            raise ProviderUnavailable from exc
+        finally:
+            self.seats_cache.delete(ticket.event_id)
+
+        await self.tickets.delete(ticket_id)
+        logger.info("Cancelled ticket %s for event %s", ticket_id, ticket.event_id)

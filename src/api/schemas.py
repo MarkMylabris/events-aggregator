@@ -64,3 +64,7 @@ class TicketCreate(BaseModel):
 
 class TicketCreated(BaseModel):
     ticket_id: uuid.UUID
+
+
+class TicketCancelled(BaseModel):
+    success: bool

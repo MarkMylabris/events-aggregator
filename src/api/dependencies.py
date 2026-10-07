@@ -8,7 +8,7 @@ from src.repositories.events import SqlEventRepository
 from src.repositories.tickets import SqlTicketRepository
 from src.usecases.events import GetEventUsecase, ListEventsUsecase
 from src.usecases.seats import GetSeatsUsecase
-from src.usecases.tickets import CreateTicketUsecase
+from src.usecases.tickets import CancelTicketUsecase, CreateTicketUsecase
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 
@@ -42,6 +42,16 @@ def get_create_ticket_usecase(
     return CreateTicketUsecase(
         client=request.app.state.events_provider,
         events=events,
+        tickets=SqlTicketRepository(session),
+        seats_cache=request.app.state.seats_cache,
+    )
+
+
+def get_cancel_ticket_usecase(
+    request: Request, session: Session
+) -> CancelTicketUsecase:
+    return CancelTicketUsecase(
+        client=request.app.state.events_provider,
         tickets=SqlTicketRepository(session),
         seats_cache=request.app.state.seats_cache,
     )

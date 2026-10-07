@@ -24,3 +24,11 @@ class SeatUnavailable(Exception):
 
 class RegistrationRejected(Exception):
     """The provider refused the registration for a reason we did not foresee."""
+
+
+class TicketNotFound(Exception):
+    pass
+
+
+class CancellationRejected(Exception):
+    """The provider refused to cancel, e.g. the event is already in the past."""

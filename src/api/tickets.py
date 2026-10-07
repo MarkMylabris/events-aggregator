@@ -1,10 +1,15 @@
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from src.api.dependencies import get_create_ticket_usecase
-from src.api.schemas import TicketCreate, TicketCreated
+from src.api.dependencies import (
+    get_cancel_ticket_usecase,
+    get_create_ticket_usecase,
+)
+from src.api.schemas import TicketCancelled, TicketCreate, TicketCreated
 from src.domain.exceptions import (
+    CancellationRejected,
     EventNotFound,
     EventNotPublished,
     InvalidSeat,
@@ -12,8 +17,9 @@ from src.domain.exceptions import (
     RegistrationClosed,
     RegistrationRejected,
     SeatUnavailable,
+    TicketNotFound,
 )
-from src.usecases.tickets import CreateTicketUsecase
+from src.usecases.tickets import CancelTicketUsecase, CreateTicketUsecase
 
 router = APIRouter()
 
@@ -48,3 +54,24 @@ async def create_ticket(
     except ProviderUnavailable:
         raise HTTPException(502, "Events Provider is unavailable") from None
     return TicketCreated(ticket_id=ticket_id)
+
+
+@router.delete("/api/tickets/{ticket_id}", response_model=TicketCancelled)
+@router.delete(
+    "/api/tickets/{ticket_id}/",
+    response_model=TicketCancelled,
+    include_in_schema=False,
+)
+async def cancel_ticket(
+    ticket_id: uuid.UUID,
+    usecase: Annotated[CancelTicketUsecase, Depends(get_cancel_ticket_usecase)],
+) -> TicketCancelled:
+    try:
+        await usecase.do(ticket_id)
+    except TicketNotFound:
+        raise HTTPException(404, "Ticket not found") from None
+    except CancellationRejected as exc:
+        raise HTTPException(400, f"Cancellation rejected: {exc}") from None
+    except ProviderUnavailable:
+        raise HTTPException(502, "Events Provider is unavailable") from None
+    return TicketCancelled(success=True)
