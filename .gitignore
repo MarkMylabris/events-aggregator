@@ -2,3 +2,6 @@
 .idea/
 __pycache__/
 *.pyc
+.env
+.ruff_cache/
+.pytest_cache/
