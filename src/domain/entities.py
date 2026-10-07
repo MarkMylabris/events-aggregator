@@ -1,7 +1,10 @@
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from enum import StrEnum
+
+# Events Provider works in Moscow time.
+PROVIDER_TZ = timezone(timedelta(hours=3))
 
 
 class EventStatus(StrEnum):

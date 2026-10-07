@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 
-from src.api import health, sync
+from src.api import events, health, sync
 from src.clients.events_provider import EventsProviderClient
 from src.config import settings
 from src.db.session import session_factory
@@ -35,3 +35,4 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Events Aggregator", lifespan=lifespan)
 app.include_router(health.router)
 app.include_router(sync.router)
+app.include_router(events.router)
