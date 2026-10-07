@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, PlainSerializer
+from pydantic import BaseModel, EmailStr, Field, PlainSerializer, StringConstraints
 
 from src.domain.entities import PROVIDER_TZ
 
@@ -47,3 +47,20 @@ class EventsList(BaseModel):
 class Seats(BaseModel):
     event_id: uuid.UUID
     available_seats: list[str]
+
+
+Name = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)
+]
+
+
+class TicketCreate(BaseModel):
+    event_id: uuid.UUID
+    first_name: Name
+    last_name: Name
+    email: EmailStr
+    seat: Annotated[str, Field(pattern=r"^[A-Z][1-9][0-9]*$", max_length=16)]
+
+
+class TicketCreated(BaseModel):
+    ticket_id: uuid.UUID

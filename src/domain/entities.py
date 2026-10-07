@@ -50,3 +50,13 @@ class SyncState:
     last_changed_at: datetime | None = None
     sync_status: str = SyncStatus.NEVER
     error: str | None = None
+
+
+@dataclass
+class Ticket:
+    id: uuid.UUID
+    event_id: uuid.UUID
+    first_name: str
+    last_name: str
+    email: str
+    seat: str

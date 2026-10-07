@@ -5,8 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_session
 from src.repositories.events import SqlEventRepository
+from src.repositories.tickets import SqlTicketRepository
 from src.usecases.events import GetEventUsecase, ListEventsUsecase
 from src.usecases.seats import GetSeatsUsecase
+from src.usecases.tickets import CreateTicketUsecase
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 
@@ -31,4 +33,15 @@ def get_seats_usecase(request: Request, events: EventRepositoryDep) -> GetSeatsU
         client=request.app.state.events_provider,
         events=events,
         cache=request.app.state.seats_cache,
+    )
+
+
+def get_create_ticket_usecase(
+    request: Request, session: Session, events: EventRepositoryDep
+) -> CreateTicketUsecase:
+    return CreateTicketUsecase(
+        client=request.app.state.events_provider,
+        events=events,
+        tickets=SqlTicketRepository(session),
+        seats_cache=request.app.state.seats_cache,
     )

@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 
-from src.api import events, health, seats, sync
+from src.api import events, health, seats, sync, tickets
 from src.clients.events_provider import EventsProviderClient
 from src.config import settings
 from src.db.session import session_factory
@@ -43,3 +43,4 @@ app.include_router(health.router)
 app.include_router(sync.router)
 app.include_router(events.router)
 app.include_router(seats.router)
+app.include_router(tickets.router)
