@@ -3,7 +3,10 @@ import contextlib
 import logging
 from collections.abc import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from src.api import events, health, seats, sync, tickets
 from src.clients.events_provider import EventsProviderClient
@@ -39,6 +42,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Events Aggregator", lifespan=lifespan)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    # Invalid input is a client error: answer 400 instead of FastAPI's 422.
+    return JSONResponse(
+        status_code=400, content=jsonable_encoder({"detail": exc.errors()})
+    )
+
+
 app.include_router(health.router)
 app.include_router(sync.router)
 app.include_router(events.router)

@@ -120,4 +120,4 @@ def test_cancel_endpoint_errors(
 
 
 def test_cancel_endpoint_bad_id(cancel_usecase: MagicMock) -> None:
-    assert TestClient(app).delete("/api/tickets/nope").status_code == 422
+    assert TestClient(app).delete("/api/tickets/nope").status_code == 400

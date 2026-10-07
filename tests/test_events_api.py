@@ -93,8 +93,8 @@ def test_list_last_page_with_date_filter(
 
 
 def test_list_rejects_bad_params(repository: MagicMock, client: TestClient) -> None:
-    assert client.get("/api/events", params={"page": 0}).status_code == 422
-    assert client.get("/api/events", params={"date_from": "x"}).status_code == 422
+    assert client.get("/api/events", params={"page": 0}).status_code == 400
+    assert client.get("/api/events", params={"date_from": "x"}).status_code == 400
 
 
 def test_event_detail(repository: MagicMock, client: TestClient) -> None:

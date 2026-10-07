@@ -191,7 +191,7 @@ def test_create_ticket_endpoint(ticket_usecase: MagicMock) -> None:
 def test_create_ticket_validation(ticket_usecase: MagicMock, override: dict) -> None:
     response = TestClient(app).post("/api/tickets", json=BODY | override)
 
-    assert response.status_code == 422
+    assert response.status_code == 400
     ticket_usecase.do.assert_not_awaited()
 
 
@@ -215,3 +215,13 @@ def test_create_ticket_errors(
     response = TestClient(app).post("/api/tickets", json=BODY)
 
     assert response.status_code == status
+
+
+def test_validation_error_lists_all_fields(ticket_usecase: MagicMock) -> None:
+    body = BODY | {"event_id": "not-a-uuid", "email": "x"}
+
+    response = TestClient(app).post("/api/tickets", json=body)
+
+    assert response.status_code == 400
+    fields = [error["loc"][-1] for error in response.json()["detail"]]
+    assert fields == ["event_id", "email"]
